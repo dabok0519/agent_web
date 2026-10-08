@@ -1,0 +1,116 @@
+# agent_web 서버 테스트 모음 (VS Code REST Client 확장: 요청 위 "Send Request" 클릭)
+# 먼저 agent_web 에서 `npm run server` 로 서버를 띄운다. 한글은 이 파일이 UTF-8 이라 그대로 간다.
+# 구분자 ### 사이가 요청 하나. @변수 는 파일 전체에서 쓴다.
+
+@host = http://127.0.0.1:9000
+@chat = {{host}}/api/chat
+
+
+POST {{chat}}
+Content-Type: application/json
+
+{
+  "id": "t3",
+  "trigger": "submit-message",
+  "messages": [
+    { "id": "m1", "role": "user", "parts": [{ "type": "text", "text": "Hello" }] }
+  ]
+}
+
+
+### 1. 정상 — 도구 호출 + 글자 스트리밍. 응답창에 data: 줄이 쌓인다
+POST {{chat}}
+Content-Type: application/json
+
+{
+  "id": "t1",
+  "trigger": "submit-message",
+  "messages": [
+    { "id": "m1", "role": "user", "parts": [{ "type": "text", "text": "45로 시작하는 구매오더 1개 찾아줘" }] }
+  ]
+} 
+
+### 2. 도구 없이 — text-* 조각만 와야 한다
+POST {{chat}}
+Content-Type: application/json
+
+{
+  "id": "t2",
+  "trigger": "submit-message",
+  "messages": [
+    { "id": "m1", "role": "user", "parts": [{ "type": "text", "text": "안녕" }] }
+  ]
+}
+
+### 3. 자재 도구 — searchMaterials 가 불려야 한다
+POST {{chat}}
+Content-Type: application/json
+
+{
+  "id": "t3",
+  "trigger": "submit-message",
+  "messages": [
+    { "id": "m1", "role": "user", "parts": [{ "type": "text", "text": "SMPS 자재 재고 알려줘" }] }
+  ]
+}
+
+### 4. 이어 묻기 — 앞 턴(도구 part 포함)을 실어 보낸다. 모델이 앞 오더를 기억하는지
+POST {{chat}}
+Content-Type: application/json
+
+{
+  "id": "t1",
+  "trigger": "submit-message",
+  "messages": [
+    { "id": "m1", "role": "user", "parts": [{ "type": "text", "text": "구매오더 4550000000 찾아줘" }] },
+    { "id": "m2", "role": "assistant", "parts": [
+      { "type": "tool-searchPurchaseOrders", "toolCallId": "c1", "state": "output-available",
+        "input": { "poNumber": "4550000000" },
+        "output": { "ok": true, "count": 1, "query": { "poNumber": "4550000000" },
+                    "orders": [{ "poNumber": "4550000000", "companyCode": "2100", "vendor": "0010000021", "orderDate": "2025-06-11", "currency": "VND" }] } },
+      { "type": "text", "text": "구매오더 4550000000 은 회사코드 2100, 업체 0010000021, 통화 VND 입니다." }
+    ] },
+    { "id": "m3", "role": "user", "parts": [{ "type": "text", "text": "그 오더 업체 코드만 다시 말해줘" }] }
+  ]
+}
+
+### 5. 가드 — trigger 없음 → 400
+POST {{chat}}
+Content-Type: application/json
+
+{}
+
+### 6. 가드 — regenerate 는 막음 → 400
+POST {{chat}}
+Content-Type: application/json
+
+{ "id": "t1", "trigger": "regenerate-message", "messages": [] }
+
+### 7. 가드 — messages 모양 틀림 → 400
+POST {{chat}}
+Content-Type: application/json
+
+{ "id": "t1", "trigger": "submit-message", "messages": "x" }
+
+### 8. 가드 — JSON 아님 → 400
+POST {{chat}}
+Content-Type: application/json
+
+이건 JSON 이 아니다
+
+### 9. 가드 — 없는 길 → 404
+GET {{host}}/other
+
+### 10. 가드 — GET 으로 채팅 경로 → 404 (POST 만 받음)
+GET {{chat}}
+
+### ── 뼈대 4 이후 (아직 없음. 만들면 주석 풀기) ──
+
+### 11. 세션 목록 (4-b 문 1) — [{ id, title, updatedAt }] 최근순
+GET {{host}}/api/chats
+
+### 12. 세션 하나 불러오기 (4-b 문 2) — UIMessage[]. 도구 part 포함
+GET {{host}}/api/chats/t1
+
+### 13. 없는 세션 → []
+GET {{host}}/api/chats/nope

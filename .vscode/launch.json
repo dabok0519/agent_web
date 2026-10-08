@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // 웹 서버를 디버거 밑에서 띄운다. app.post 핸들러 안에 중단점을 찍고 REST Client/curl 로 요청을 보내면 거기서 멈춘다.
+      "name": "web server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/server.ts",
+      "runtimeArgs": ["--import", "tsx"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "smartStep": true
+    },
+    {
+      // 지금 열려 있는 파일을 돌린다 (check 파일용).
+      "name": "현재 파일",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "runtimeArgs": ["--import", "tsx"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "smartStep": true
+    }
+  ]
+}
