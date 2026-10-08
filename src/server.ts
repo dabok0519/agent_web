@@ -24,7 +24,7 @@ import { serve } from '@hono/node-server';
  * toUIMessageStream: 조각 변환. (브라우저에 다시 보내기 위함 )
  * createUIMessageStreamResponse: 조각 스트림을 표준 Response 로. (전 판의 pipeUIMessageStreamToResponse 자리)
  */
-import { safeValidateUIMessages, convertToModelMessages, toUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { safeValidateUIMessages, convertToModelMessages, toUIMessageStream, createUIMessageStreamResponse, generateId } from 'ai';
 
 import { runAgent } from './agent.js';
 import { openHistory } from './history.js';
@@ -145,7 +145,6 @@ app.post(CHAT_PATH, async (c) => {
 
   /**
    * ① 조각 스트림을 표준 Response 로 만든다. 헤더(text/event-stream)와 `data: {...}\n\n` 줄 변환을 SDK 가 한다.
-   * 같은 일을 "res 에 쓰기" 와 "Response 돌려주기" 로 하는 두 함수가 있고, 틀(Hono·Next.js)이 Response 를 받으니 이쪽.
    */
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
@@ -156,6 +155,12 @@ app.post(CHAT_PATH, async (c) => {
        * ② 안 넘기면: onEnd 의 messages 에 새 assistant 하나만 온다. 앞부분은 우리가 validated.data 에서 직접 이어 붙여야 하고 id 가 브라우저와 어긋날 수 있다.
        */
       originalMessages: validated.data,
+
+      /**
+       * 새 assistant 메시지의 id 를 만든다. 안 넘기면 SDK 가 id 를 안 만들어 '' 로 저장된다(DB 에서 확인).
+       * '' 가 두 개 이상이면 React key 가 겹치고, 다음 턴에 이력을 보낼 때 id 가 비어 간다.
+       */
+      generateMessageId: generateId,
 
       /**
        * ① 스트림이 끝나면 한 번. 조각을 브라우저로 보내면서 서버 안에서도 같은 뭉치기 함수(processUIMessageStream)를 돌려 두었다가,

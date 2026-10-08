@@ -7,10 +7,12 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "preserve",   // nodenext 는 import 에 .js 확장자를 요구한다. shadcn·ai-elements 파일은 확장자 없이 쓰므로 preserve(번들러 방식). 서버 쪽 .js import 는 그대로 동작
     "target": "esnext",
     "lib": ["esnext", "dom"],   // dom = 브라우저 단어(document·window). src/web/ui 의 .tsx 가 쓴다
     "types": ["node"],
+    // '@/…' = src/ui/… . vite.config.ts 의 alias 와 같은 뜻. shadcn·ai-elements 가 쓴다
+    "paths": { "@/*": ["./src/ui/*"] },
 
     // Other Outputs
     "sourceMap": true,
@@ -18,8 +20,8 @@
     // "declarationMap": true,
 
     // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": false,     // 같은 이유 (prompt-input.tsx 의 배열 인덱스)
+    "exactOptionalPropertyTypes": false,   // 가져온 shadcn·ai-elements 파일이 undefined 대입을 써서 끔. 우리 코드는 켜져 있을 때 쓴 그대로라 영향 없음
 
     // Style Options
     // "noImplicitReturns": true,

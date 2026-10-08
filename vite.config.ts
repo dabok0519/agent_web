@@ -10,13 +10,21 @@ import { defineConfig } from 'vite';
  */
 import react from '@vitejs/plugin-react';
 
+/**
+ * Tailwind(클래스 이름으로 스타일 주는 CSS 도구). ai-elements 컴포넌트가 이걸로 꾸며져 있어 없으면 맨 글자만 뜬다.
+ */
+import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath } from 'node:url';
+
 /** TODO: Hono 서버 주소. src/web/server.ts 의 PORT 와 같아야 한다 */
 const API_SERVER = 'http://127.0.0.1:9000';
 
 export default defineConfig({
   /** index.html 이 있는 폴더. 브라우저 코드는 전부 여기 밑 */
   root: 'src/ui',
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  /** '@/…' 를 src/ui/… 로 읽는다. shadcn·ai-elements 가 이 줄임말로 import 한다. tsconfig 의 paths 와 같아야 한다 */
+  resolve: { alias: { '@': fileURLToPath(new URL('./src/ui', import.meta.url)) } },
   server: {
     /**
      * /api 로 시작하는 요청은 Hono 서버로 넘긴다. 브라우저 코드는 '/api/chat' 만 적고 포트를 모른다.
